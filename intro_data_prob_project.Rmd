@@ -1,0 +1,134 @@
+---
+title: "Exploring the BRFSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+### Load data
+
+```{r load-data}
+load("brfss2013.RData")
+```
+
+* * *
+## Part 1: Data
+
+In BRFSS, the observations in the sample were collected by telephone survey. There was used stratified random sampling. This data was not collected by the random assignment, that's why it is observational study and generalizable.
+
+As this is the observational study we can't infer any causality. It is possible to infer causality when the study is experimental.
+
+* * *
+
+## Part 2: Research questions
+
+**Research quesion 1:**
+
+The population of the U.S. is there a correlation between amount of sleep and the general health. In our busy life, it's difficult to do sleep adequately. Though it's an observational study I'm really interested in a causal relationship.
+
+Id variable :
+sleptim1 :Amount of sleep
+genhlth : General health
+
+**Research quesion 2:**
+
+Is there any correlation between a level of income and overall life satisfaction? Further, any differences in this correlation between genders.
+I am interested to see if there is any noticeable trends between income level and reported satisfaction.
+
+Id variables:
+satisfy: Satisfaction With Life
+income2: income  Level
+sex: Respondents Sex
+
+**Research quesion 3:**
+
+Is there any relationship between prediabetes condition and BMI for males and females.An  association between prediabetes and BMI helps us to better understand this more and more common disease in our societies.
+
+Id variables:
+prediab1 : Prediabetes condition
+x_bmi5 : Body Mass Index
+sex: Respondents sex
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+**Research quesion 1:**
+
+```{r}
+q1 <- brfss2013 %>%
+  select(genhlth , sleptim1) %>%
+  #Filering na from general health
+  filter(!is.na(genhlth) , sleptim1 < 24) %>%
+  group_by(genhlth) %>% 
+  summarise(mn_sleep = mean(sleptim1))
+#Display
+q1
+```
+
+```{r}
+#Make plot of mean sleep grouped by general health
+ggplot(data = q1 , aes(genhlth ,mn_sleep)) +
+  geom_point()+
+  labs(title="Mean Hours of Sleep for Each general Health",
+       x="General Health rating", y="Mean Hours of Sleep")
+```
+
+It's said that from the table and plot above, there does appear to be a relation between general health and time sleeping. Participate who reported being in excellent general health slept the longest time on average.
+
+**Research quesion 2:**
+
+```{r}
+q2 <- select(brfss2013, lsatisfy , sex, income2) %>% 
+#Filtering na from the variable  
+  filter(!is.na(lsatisfy), !is.na(sex), !is.na(income2)) 
+q2 %>% group_by(lsatisfy) %>%    
+  summarise(count=n()) 
+q2 %>% group_by(income2) %>%  
+  summarise(count=n())
+q2 %>% group_by(sex) %>%  
+  summarise(count=n()) 
+```
+
+```{r}
+#Make plot life satisfaction over income between male and felame
+ggplot(data = q2, aes(x = lsatisfy , y = income2 )) +
+  geom_count () +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_grid( ~  sex) +
+  xlab("Satisfaction With Life") +
+  ylab ("Income Level")
+```
+when we look at reported numbers of very satisfied and satisfied respondents, the number is trending up as we move up the income scale. This proves that more research could help identify possible causaul relationships.Finally, short of more robust analysis to identify causation, I believe this survey would benefit from further segementation of those who earn more than 75,000 to see how even higher earners fare in terms of satisfaction level of males and females.
+
+
+**Research quesion 3:**
+
+```{r}
+q3 <- brfss2013 %>% 
+  filter(prediab1 != "NA" ,X_bmi5 != "NA") %>% 
+  mutate(bmi = X_bmi5 / 100)
+```
+
+```{r}
+#Making plot of prediabetes and BMI
+ggplot(q3, aes(x = prediab1, y = bmi)) + 
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_wrap(~sex) + 
+  xlab("Prediabetes Condition") +
+  ylab("BMI")
+```
+
+In this case for this exploratory data analysis I can't concern any relationship between prediabetes and BMI.though from this plot we can see that when the prediabetes condition is active the the bmi is slightly increases.In case of female same thing happening.
